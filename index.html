@@ -131,6 +131,13 @@ header.topbar {
 .progress-bar { height: 8px; border-radius: 4px; background: var(--grid); overflow: hidden; margin-top: 8px; }
 .progress-bar > div { height: 100%; background: var(--good); border-radius: 4px; }
 
+.marcos-reserva { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.marco {
+  font-size: .68rem; padding: 2px 7px; border-radius: 999px; font-weight: 600;
+  background: var(--grid); color: var(--muted); white-space: nowrap;
+}
+.marco.atingido { background: var(--accent-wash); color: var(--good); }
+
 section { margin-bottom: 26px; }
 .card {
   background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
@@ -438,6 +445,17 @@ function fmtMesLabel(d) {
 function fmtBRL(v) {
   return (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+const METAS_RESERVA = [5000, 10000, 20000, 50000, 80000, 100000];
+function fmtMilhar(v) {
+  return v >= 1000 ? `${(v/1000).toLocaleString('pt-BR')}k` : `${v}`;
+}
+function proximoMarco(v) {
+  return METAS_RESERVA.find(m => v < m) ?? METAS_RESERVA[METAS_RESERVA.length - 1];
+}
+function marcoAnterior(v) {
+  const idx = METAS_RESERVA.findIndex(m => v < m);
+  return idx <= 0 ? 0 : METAS_RESERVA[idx - 1];
+}
 function toggleForm(id) {
   document.getElementById(id).classList.toggle('open');
 }
@@ -662,26 +680,43 @@ function renderTiles() {
   const saidaPaga = saidas.filter(l => l.status === 'pago').reduce((s, l) => s + Number(l.valor), 0);
   const saldoProjetado = entradaTotal - saidaTotal;
 
-  const pctReserva = Math.min(100, (reservaAcumulada / Number(metas.meta_reserva_total)) * 100);
+  const metaFinal = METAS_RESERVA[METAS_RESERVA.length - 1];
+  const bateuTudo = reservaAcumulada >= metaFinal;
+  const proximo = proximoMarco(reservaAcumulada);
+  const anterior = marcoAnterior(reservaAcumulada);
+  const pctTier = bateuTudo ? 100 : Math.max(0, Math.min(100, ((reservaAcumulada - anterior) / (proximo - anterior)) * 100));
+  const subReserva = bateuTudo
+    ? `Meta final de ${fmtBRL(metaFinal)} batida! 🏆`
+    : `Próxima meta: ${fmtBRL(proximo)} — falta ${fmtBRL(proximo - reservaAcumulada)}`;
 
   const tiles = [
     { label: 'Entradas do mês', value: fmtBRL(entradaTotal), sub: `${entradas.length} lançamento(s)` },
     { label: 'Saídas do mês', value: fmtBRL(saidaTotal), sub: `${fmtBRL(saidaPaga)} já pago` },
     { label: 'Saldo projetado', value: fmtBRL(saldoProjetado), cls: saldoProjetado >= 0 ? 'good' : 'bad',
       sub: `Meta de investir: ${fmtBRL(metas.meta_investir_mensal)}/mês` },
-    { label: 'Reserva financeira', value: fmtBRL(reservaAcumulada),
-      sub: `Meta: ${fmtBRL(metas.meta_reserva_total)} (${pctReserva.toFixed(1)}%)`,
-      progress: pctReserva },
   ];
 
-  document.getElementById('tiles').innerHTML = tiles.map(t => `
+  const tilesHtml = tiles.map(t => `
     <div class="tile">
       <div class="label">${t.label}</div>
       <div class="value ${t.cls||''}">${t.value}</div>
       <div class="sub">${t.sub}</div>
-      ${t.progress !== undefined ? `<div class="progress-bar"><div style="width:${t.progress}%"></div></div>` : ''}
     </div>
   `).join('');
+
+  const reservaHtml = `
+    <div class="tile">
+      <div class="label">Reserva financeira</div>
+      <div class="value good">${fmtBRL(reservaAcumulada)}</div>
+      <div class="sub">${subReserva}</div>
+      <div class="progress-bar"><div style="width:${pctTier}%"></div></div>
+      <div class="marcos-reserva">
+        ${METAS_RESERVA.map(m => `<span class="marco ${reservaAcumulada >= m ? 'atingido' : ''}">${reservaAcumulada >= m ? '✓ ' : ''}${fmtMilhar(m)}</span>`).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('tiles').innerHTML = tilesHtml + reservaHtml;
 }
 
 function renderContas() {
@@ -808,18 +843,18 @@ function renderDicas() {
     dicas.push({ icone: '📊', html: `<b>${maiorCat[0]}</b> é sua maior categoria de gasto este mês: ${fmtBRL(maiorCat[1])} (${pct}% do total de saídas).` });
   }
 
-  // 5. projeção de quanto tempo falta pra bater a reserva de 100k
-  const metaReserva = Number(metas.meta_reserva_total);
-  if (reservaAcumulada < metaReserva) {
+  // 5. projeção de quanto tempo falta pro próximo marco da reserva (5k → 10k → 20k → 50k → 80k → 100k)
+  const metaFinalReserva = METAS_RESERVA[METAS_RESERVA.length - 1];
+  if (reservaAcumulada < metaFinalReserva) {
+    const proximoMarcoDica = proximoMarco(reservaAcumulada);
     const ritmoMensal = Math.max(metaInvestir, 1);
-    const faltam = metaReserva - reservaAcumulada;
+    const faltam = proximoMarcoDica - reservaAcumulada;
     const meses = Math.ceil(faltam / ritmoMensal);
     if (meses > 0 && isFinite(meses)) {
-      const anos = (meses/12).toFixed(1);
-      dicas.push({ icone: '🎯', html: `Faltam <b>${fmtBRL(faltam)}</b> pra bater a meta de ${fmtBRL(metaReserva)}. Aportando ${fmtBRL(ritmoMensal)}/mês, são ~${meses} meses (${anos} anos) pra chegar lá.` });
+      dicas.push({ icone: '🎯', html: `Faltam <b>${fmtBRL(faltam)}</b> pro próximo marco (${fmtBRL(proximoMarcoDica)}). Aportando ${fmtBRL(ritmoMensal)}/mês, são ~${meses} meses pra chegar lá — a meta final é ${fmtBRL(metaFinalReserva)}.` });
     }
   } else {
-    dicas.push({ icone: '🏆', html: `Meta de reserva de ${fmtBRL(metaReserva)} batida! Hora de definir o próximo objetivo.` });
+    dicas.push({ icone: '🏆', html: `Meta final de reserva de ${fmtBRL(metaFinalReserva)} batida! Hora de definir o próximo objetivo.` });
   }
 
   document.getElementById('dicas').innerHTML = dicas.length
