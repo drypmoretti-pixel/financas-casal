@@ -34,35 +34,8 @@
   --chip-7: #e34948; /* red     */
   --card-radius: 14px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --surface-1:  #1e1f1c;
-    --plane:      #101110;
-    --text-primary:   #ffffff;
-    --text-secondary: #c3c2b7;
-    --muted:      #918f89;
-    --grid:       #2c2c2a;
-    --baseline:   #383835;
-    --border:     rgba(255,255,255,0.10);
-    --field-bg:   #26271f;
-    --accent:     #0ca30c;
-    --accent-wash: #0f2010;
-    --series-entrada: #3987e5;
-    --series-saida:   #d95926;
-    --good:      #0ca30c;
-    --warning:   #fab219;
-    --serious:   #ec835a;
-    --critical:  #e66767;
-    --chip-1: #3987e5;
-    --chip-2: #d95926;
-    --chip-3: #199e70;
-    --chip-4: #c98500;
-    --chip-5: #d55181;
-    --chip-6: #9085e9;
-    --chip-7: #e66767;
-  }
-}
+/* modo escuro automático desativado de propósito — o app é sempre fundo branco,
+   não importa a configuração do celular/navegador */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --surface-1:  #1e1f1c;
