@@ -211,6 +211,20 @@ form.form-grid button { grid-column: 1 / -1; }
 .tab-panel.active { display: block; }
 
 .empty { color: var(--muted); font-size: .85rem; padding: 10px 0; }
+
+/* ---- modal de edição ---- */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(11,11,11,0.45);
+  align-items: center; justify-content: center; padding: 20px; z-index: 50;
+}
+.modal-overlay.open { display: flex; }
+.modal-card {
+  background: var(--surface-1); border-radius: var(--card-radius); padding: 20px;
+  width: 100%; max-width: 380px; box-shadow: 0 8px 24px rgba(11,11,11,0.18);
+}
+.btn-secondary { background: var(--field-bg) !important; color: var(--text-primary) !important; }
+.data-venc { color: var(--muted); font-size: .74rem; display: block; margin-top: 1px; }
+.btn-edit { border: none; background: none; color: var(--muted); cursor: pointer; font-size: .85rem; padding: 2px 4px; }
 </style>
 </head>
 <body>
@@ -270,6 +284,10 @@ form.form-grid button { grid-column: 1 / -1; }
             <label>Categoria</label>
             <select id="desp-categoria"></select>
           </div>
+          <div>
+            <label>Vencimento (opcional)</label>
+            <input type="date" id="desp-vencimento">
+          </div>
           <button class="btn" type="submit">Adicionar</button>
         </form>
         <div class="categorias-grid" id="lista-contas" style="margin-top:14px;"></div>
@@ -300,6 +318,10 @@ form.form-grid button { grid-column: 1 / -1; }
               <option value="pago">Já recebido</option>
               <option value="pendente">A receber</option>
             </select>
+          </div>
+          <div>
+            <label>Data (opcional)</label>
+            <input type="date" id="ent-vencimento">
           </div>
           <button class="btn" type="submit">Lançar entrada</button>
         </form>
@@ -336,6 +358,38 @@ form.form-grid button { grid-column: 1 / -1; }
   </div>
 </div>
 
+<div id="modal-overlay" class="modal-overlay" onclick="fecharModalSeFora(event)">
+  <div class="modal-card">
+    <h2>Editar lançamento</h2>
+    <form class="form-grid" id="form-editar" onsubmit="return salvarEdicao(event)">
+      <div class="full">
+        <label>Descrição</label>
+        <input type="text" id="edit-desc" required>
+      </div>
+      <div>
+        <label>Valor (R$)</label>
+        <input type="number" step="0.01" id="edit-valor" required>
+      </div>
+      <div>
+        <label>Categoria</label>
+        <select id="edit-categoria"></select>
+      </div>
+      <div>
+        <label>Vencimento</label>
+        <input type="date" id="edit-vencimento">
+      </div>
+      <div id="edit-pago-wrap">
+        <label>Data de pagamento</label>
+        <input type="date" id="edit-pago">
+      </div>
+      <div class="full" style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 const SUPA_URL = 'https://okolawlvmfyxzvnnpvtv.supabase.co';
 const SUPA_KEY = 'sb_publishable_IsQdhzWIou3tBX9qxak1VQ_m-wEHCFZ';
@@ -368,6 +422,16 @@ let reservaAcumulada = 0;
 
 function primeiroDiaMes(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function fmtMesRef(d) { return d.toISOString().slice(0,10); }
+function dataDoVencimento(mesRefDate, dia) {
+  const ultimoDia = new Date(mesRefDate.getFullYear(), mesRefDate.getMonth() + 1, 0).getDate();
+  const d = new Date(mesRefDate.getFullYear(), mesRefDate.getMonth(), Math.min(dia, ultimoDia));
+  return fmtMesRef(d);
+}
+function fmtDataCurta(dataStr) {
+  if (!dataStr) return '';
+  const d = new Date(dataStr + 'T00:00:00');
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
 function fmtMesLabel(d) {
   return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
 }
@@ -453,6 +517,7 @@ async function carregarMes() {
     const novos = faltando.map(cf => ({
       tipo: 'saida', categoria_id: cf.categoria_id, conta_fixa_id: cf.id,
       descricao: cf.nome, valor: cf.valor_esperado, mes_ref: mesRef, status: 'pendente',
+      data_vencimento: cf.dia_vencimento ? dataDoVencimento(mesAtual, cf.dia_vencimento) : null,
     }));
     await sb.from('fin_lancamentos').upsert(novos, { onConflict: 'mes_ref,conta_fixa_id', ignoreDuplicates: true });
     const { data: recarregado } = await sb.from('fin_lancamentos').select('*').eq('mes_ref', mesRef);
@@ -492,14 +557,16 @@ function novaDespesaAvulsa(ev) {
   const desc = document.getElementById('desp-desc').value.trim();
   const valor = parseFloat(document.getElementById('desp-valor').value);
   const categoria_id = parseInt(document.getElementById('desp-categoria').value);
+  const data_vencimento = document.getElementById('desp-vencimento').value || null;
   if (!desc || !valor) return false;
   (async () => {
     await sb.from('fin_lancamentos').insert([{
-      tipo: 'saida', categoria_id, descricao: desc, valor,
+      tipo: 'saida', categoria_id, descricao: desc, valor, data_vencimento,
       mes_ref: fmtMesRef(mesAtual), status: 'pendente',
     }]);
     document.getElementById('desp-desc').value = '';
     document.getElementById('desp-valor').value = '';
+    document.getElementById('desp-vencimento').value = '';
     document.getElementById('form-despesa').classList.remove('open');
     await carregarMes();
   })();
@@ -512,16 +579,65 @@ function novaEntrada(ev) {
   const valor = parseFloat(document.getElementById('ent-valor').value);
   const categoria_id = parseInt(document.getElementById('ent-categoria').value);
   const status = document.getElementById('ent-status').value;
+  const data_vencimento = document.getElementById('ent-vencimento').value || null;
   if (!desc || !valor) return false;
   (async () => {
     const dataPago = status === 'pago' ? new Date().toISOString().slice(0,10) : null;
     await sb.from('fin_lancamentos').insert([{
-      tipo: 'entrada', categoria_id, descricao: desc, valor,
+      tipo: 'entrada', categoria_id, descricao: desc, valor, data_vencimento,
       mes_ref: fmtMesRef(mesAtual), status, data_pago: dataPago,
     }]);
     document.getElementById('ent-desc').value = '';
     document.getElementById('ent-valor').value = '';
+    document.getElementById('ent-vencimento').value = '';
     document.getElementById('form-entrada').classList.remove('open');
+    await carregarDadosBase();
+    await carregarMes();
+  })();
+  return false;
+}
+
+// ---------- EDIÇÃO ----------
+function abrirEdicao(id) {
+  const l = lancamentosMes.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('form-editar').dataset.id = l.id;
+  document.getElementById('edit-desc').value = l.descricao;
+  document.getElementById('edit-valor').value = l.valor;
+  const sel = document.getElementById('edit-categoria');
+  sel.innerHTML = categorias.filter(c => c.tipo === l.tipo)
+    .map(c => `<option value="${c.id}" ${c.id === l.categoria_id ? 'selected' : ''}>${c.nome}</option>`).join('');
+  document.getElementById('edit-vencimento').value = l.data_vencimento || '';
+  const pagoWrap = document.getElementById('edit-pago-wrap');
+  if (l.status === 'pago') {
+    pagoWrap.style.display = 'block';
+    document.getElementById('edit-pago').value = l.data_pago || '';
+  } else {
+    pagoWrap.style.display = 'none';
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function fecharModalSeFora(ev) {
+  if (ev.target.id === 'modal-overlay') fecharModal();
+}
+function salvarEdicao(ev) {
+  ev.preventDefault();
+  const id = parseInt(document.getElementById('form-editar').dataset.id);
+  const patch = {
+    descricao: document.getElementById('edit-desc').value.trim(),
+    valor: parseFloat(document.getElementById('edit-valor').value),
+    categoria_id: parseInt(document.getElementById('edit-categoria').value),
+    data_vencimento: document.getElementById('edit-vencimento').value || null,
+  };
+  if (document.getElementById('edit-pago-wrap').style.display !== 'none') {
+    patch.data_pago = document.getElementById('edit-pago').value || null;
+  }
+  (async () => {
+    await sb.from('fin_lancamentos').update(patch).eq('id', id);
+    fecharModal();
     await carregarDadosBase();
     await carregarMes();
   })();
@@ -585,12 +701,15 @@ function renderContas() {
         </div>
         ${itens.map(l => `
           <div class="conta-row">
-            <div class="conta-nome">${l.descricao}${l.conta_fixa_id ? '<span class="pill">fixa</span>' : ''}</div>
+            <div class="conta-nome">${l.descricao}${l.conta_fixa_id ? '<span class="pill">fixa</span>' : ''}
+              ${dataInfo(l)}
+            </div>
             <div class="conta-actions">
               <div class="conta-valor">${fmtBRL(l.valor)}</div>
               <button class="btn-baixa ${l.status==='pago'?'pago':''}" onclick="darBaixa(${l.id}, '${l.status}')">
                 ${l.status==='pago' ? '✓ Pago' : 'Dar baixa'}
               </button>
+              <button class="btn-edit" onclick="abrirEdicao(${l.id})" title="Editar">✎</button>
               <button class="btn-del" onclick="excluirLancamento(${l.id})" title="Excluir">✕</button>
             </div>
           </div>
@@ -608,16 +727,25 @@ function renderEntradas() {
   }
   document.getElementById('lista-entradas').innerHTML = entradas.map(l => `
     <div class="conta-row">
-      <div class="conta-nome">${l.descricao}</div>
+      <div class="conta-nome">${l.descricao}
+        ${dataInfo(l)}
+      </div>
       <div class="conta-actions">
         <div class="conta-valor">${fmtBRL(l.valor)}</div>
         <button class="btn-baixa ${l.status==='pago'?'pago':''}" onclick="darBaixa(${l.id}, '${l.status}')">
           ${l.status==='pago' ? '✓ Recebido' : 'A receber'}
         </button>
+        <button class="btn-edit" onclick="abrirEdicao(${l.id})" title="Editar">✎</button>
         <button class="btn-del" onclick="excluirLancamento(${l.id})" title="Excluir">✕</button>
       </div>
     </div>
   `).join('');
+}
+
+function dataInfo(l) {
+  if (l.status === 'pago' && l.data_pago) return `<span class="data-venc">pago em ${fmtDataCurta(l.data_pago)}</span>`;
+  if (l.data_vencimento) return `<span class="data-venc">vence ${fmtDataCurta(l.data_vencimento)}</span>`;
+  return '';
 }
 
 // ---------- DICAS (regras) ----------
