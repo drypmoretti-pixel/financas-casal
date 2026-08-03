@@ -180,6 +180,18 @@ svg.chart { display: block; }
   font-size: .65rem; padding: 1px 6px; border-radius: 999px; margin-left: 6px;
   background: var(--grid); color: var(--text-secondary);
 }
+.conta-nome .pill.retro { background: #fdeaea; color: var(--critical); }
+.checkbox-line {
+  display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--text-secondary);
+  cursor: pointer;
+}
+.checkbox-line input { width: auto; }
+.resumo-retro {
+  display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--text-secondary);
+  background: var(--field-bg); border-radius: 10px; padding: 8px 12px; margin: 8px 0 4px;
+}
+.resumo-retro b { color: var(--text-primary); }
+.resumo-retro .retro-valor { color: var(--critical); }
 .conta-valor { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; font-size: .88rem; }
 .conta-actions { display: flex; gap: 6px; align-items: center; }
 .btn-baixa {
@@ -278,6 +290,7 @@ form.form-grid button { grid-column: 1 / -1; }
           <button class="add-toggle" onclick="toggleForm('form-despesa')">+ Despesa avulsa</button>
         </div>
         <p class="muted">Marque "dar baixa" quando pagar. As contas fixas do mês aparecem sozinhas, organizadas por categoria.</p>
+        <div id="resumo-retro-contas"></div>
         <form class="form-grid form-collapse" id="form-despesa" onsubmit="return novaDespesaAvulsa(event)">
           <div class="full">
             <label>Descrição</label>
@@ -295,6 +308,9 @@ form.form-grid button { grid-column: 1 / -1; }
             <label>Vencimento (opcional)</label>
             <input type="date" id="desp-vencimento">
           </div>
+          <label class="checkbox-line full">
+            <input type="checkbox" id="desp-retroativo"> Conta retroativa (referente a um mês anterior)
+          </label>
           <button class="btn" type="submit">Adicionar</button>
         </form>
         <div class="categorias-grid" id="lista-contas" style="margin-top:14px;"></div>
@@ -306,6 +322,7 @@ form.form-grid button { grid-column: 1 / -1; }
           <button class="add-toggle" onclick="toggleForm('form-entrada')">+ Nova entrada</button>
         </div>
         <p class="muted">Dinheiro que entrou (cliente, salário, etc.)</p>
+        <div id="resumo-retro-entradas"></div>
         <form class="form-grid form-collapse" id="form-entrada" onsubmit="return novaEntrada(event)">
           <div class="full">
             <label>Descrição (cliente / origem)</label>
@@ -330,6 +347,9 @@ form.form-grid button { grid-column: 1 / -1; }
             <label>Data (opcional)</label>
             <input type="date" id="ent-vencimento">
           </div>
+          <label class="checkbox-line full">
+            <input type="checkbox" id="ent-retroativo"> Entrada retroativa (referente a um mês anterior)
+          </label>
           <button class="btn" type="submit">Lançar entrada</button>
         </form>
         <div id="lista-entradas" style="margin-top:10px;"></div>
@@ -389,6 +409,9 @@ form.form-grid button { grid-column: 1 / -1; }
         <label>Data de pagamento</label>
         <input type="date" id="edit-pago">
       </div>
+      <label class="checkbox-line full">
+        <input type="checkbox" id="edit-retroativo"> Referente a um mês anterior (retroativo)
+      </label>
       <div class="full" style="display:flex; gap:8px;">
         <button type="button" class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
         <button type="submit" class="btn">Salvar</button>
@@ -585,15 +608,17 @@ function novaDespesaAvulsa(ev) {
   const valor = parseFloat(document.getElementById('desp-valor').value);
   const categoria_id = parseInt(document.getElementById('desp-categoria').value);
   const data_vencimento = document.getElementById('desp-vencimento').value || null;
+  const retroativo = document.getElementById('desp-retroativo').checked;
   if (!desc || !valor) return false;
   (async () => {
     await sb.from('fin_lancamentos').insert([{
-      tipo: 'saida', categoria_id, descricao: desc, valor, data_vencimento,
+      tipo: 'saida', categoria_id, descricao: desc, valor, data_vencimento, retroativo,
       mes_ref: fmtMesRef(mesAtual), status: 'pendente',
     }]);
     document.getElementById('desp-desc').value = '';
     document.getElementById('desp-valor').value = '';
     document.getElementById('desp-vencimento').value = '';
+    document.getElementById('desp-retroativo').checked = false;
     document.getElementById('form-despesa').classList.remove('open');
     await carregarMes();
   })();
@@ -607,16 +632,18 @@ function novaEntrada(ev) {
   const categoria_id = parseInt(document.getElementById('ent-categoria').value);
   const status = document.getElementById('ent-status').value;
   const data_vencimento = document.getElementById('ent-vencimento').value || null;
+  const retroativo = document.getElementById('ent-retroativo').checked;
   if (!desc || !valor) return false;
   (async () => {
     const dataPago = status === 'pago' ? new Date().toISOString().slice(0,10) : null;
     await sb.from('fin_lancamentos').insert([{
-      tipo: 'entrada', categoria_id, descricao: desc, valor, data_vencimento,
+      tipo: 'entrada', categoria_id, descricao: desc, valor, data_vencimento, retroativo,
       mes_ref: fmtMesRef(mesAtual), status, data_pago: dataPago,
     }]);
     document.getElementById('ent-desc').value = '';
     document.getElementById('ent-valor').value = '';
     document.getElementById('ent-vencimento').value = '';
+    document.getElementById('ent-retroativo').checked = false;
     document.getElementById('form-entrada').classList.remove('open');
     await carregarDadosBase();
     await carregarMes();
@@ -635,6 +662,7 @@ function abrirEdicao(id) {
   sel.innerHTML = categorias.filter(c => c.tipo === l.tipo)
     .map(c => `<option value="${c.id}" ${c.id === l.categoria_id ? 'selected' : ''}>${c.nome}</option>`).join('');
   document.getElementById('edit-vencimento').value = l.data_vencimento || '';
+  document.getElementById('edit-retroativo').checked = !!l.retroativo;
   const pagoWrap = document.getElementById('edit-pago-wrap');
   if (l.status === 'pago') {
     pagoWrap.style.display = 'block';
@@ -658,6 +686,7 @@ function salvarEdicao(ev) {
     valor: parseFloat(document.getElementById('edit-valor').value),
     categoria_id: parseInt(document.getElementById('edit-categoria').value),
     data_vencimento: document.getElementById('edit-vencimento').value || null,
+    retroativo: document.getElementById('edit-retroativo').checked,
   };
   if (document.getElementById('edit-pago-wrap').style.display !== 'none') {
     patch.data_pago = document.getElementById('edit-pago').value || null;
@@ -719,8 +748,22 @@ function renderTiles() {
   document.getElementById('tiles').innerHTML = tilesHtml + reservaHtml;
 }
 
+function renderResumoRetro(itens, elId) {
+  const el = document.getElementById(elId);
+  const retro = itens.filter(l => l.retroativo).reduce((s,l)=>s+Number(l.valor),0);
+  const atual = itens.filter(l => !l.retroativo).reduce((s,l)=>s+Number(l.valor),0);
+  if (retro <= 0) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="resumo-retro">
+      <span>Este mês: <b>${fmtBRL(atual)}</b> atual</span>
+      <span class="retro-valor">+ <b>${fmtBRL(retro)}</b> retroativo</span>
+    </div>
+  `;
+}
+
 function renderContas() {
   const saidas = lancamentosMes.filter(l => l.tipo === 'saida');
+  renderResumoRetro(saidas, 'resumo-retro-contas');
   const porCategoria = {};
   saidas.forEach(l => {
     const cat = categorias.find(c => c.id === l.categoria_id);
@@ -745,7 +788,7 @@ function renderContas() {
         </div>
         ${itens.map(l => `
           <div class="conta-row">
-            <div class="conta-nome">${l.descricao}${l.conta_fixa_id ? '<span class="pill">fixa</span>' : ''}
+            <div class="conta-nome">${l.descricao}${l.conta_fixa_id ? '<span class="pill">fixa</span>' : ''}${l.retroativo ? '<span class="pill retro">retroativa</span>' : ''}
               ${dataInfo(l)}
             </div>
             <div class="conta-actions">
@@ -765,13 +808,14 @@ function renderContas() {
 
 function renderEntradas() {
   const entradas = lancamentosMes.filter(l => l.tipo === 'entrada');
+  renderResumoRetro(entradas, 'resumo-retro-entradas');
   if (!entradas.length) {
     document.getElementById('lista-entradas').innerHTML = '<div class="empty">Nenhuma entrada lançada neste mês.</div>';
     return;
   }
   document.getElementById('lista-entradas').innerHTML = entradas.map(l => `
     <div class="conta-row">
-      <div class="conta-nome">${l.descricao}
+      <div class="conta-nome">${l.descricao}${l.retroativo ? '<span class="pill retro">retroativa</span>' : ''}
         ${dataInfo(l)}
       </div>
       <div class="conta-actions">
