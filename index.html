@@ -8,57 +8,84 @@
 <style>
 :root {
   color-scheme: light;
-  --surface-1:  #fcfcfb;
-  --plane:      #f9f9f7;
+  --surface-1:  #ffffff;
+  --plane:      #f5f6f4;
   --text-primary:   #0b0b0b;
   --text-secondary: #52514e;
   --muted:      #898781;
-  --grid:       #e1e0d9;
+  --grid:       #e4e6e1;
   --baseline:   #c3c2b7;
-  --border:     rgba(11,11,11,0.10);
+  --border:     rgba(11,11,11,0.09);
+  --accent:     #0ca30c;
+  --accent-wash: #e7f6e7;
   --series-entrada: #2a78d6;
   --series-saida:   #eb6834;
   --good:      #0ca30c;
   --warning:   #fab219;
   --serious:   #ec835a;
   --critical:  #d03b3b;
+  --chip-1: #2a78d6; /* blue    */
+  --chip-2: #eb6834; /* orange  */
+  --chip-3: #1baf7a; /* aqua    */
+  --chip-4: #eda100; /* yellow  */
+  --chip-5: #e87ba4; /* magenta */
+  --chip-6: #4a3aa7; /* violet  */
+  --chip-7: #e34948; /* red     */
   --card-radius: 14px;
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --surface-1:  #1a1a19;
-    --plane:      #0d0d0d;
+    --surface-1:  #1e1f1c;
+    --plane:      #101110;
     --text-primary:   #ffffff;
     --text-secondary: #c3c2b7;
-    --muted:      #898781;
+    --muted:      #918f89;
     --grid:       #2c2c2a;
     --baseline:   #383835;
     --border:     rgba(255,255,255,0.10);
+    --accent:     #0ca30c;
+    --accent-wash: #0f2010;
     --series-entrada: #3987e5;
     --series-saida:   #d95926;
     --good:      #0ca30c;
     --warning:   #fab219;
     --serious:   #ec835a;
     --critical:  #e66767;
+    --chip-1: #3987e5;
+    --chip-2: #d95926;
+    --chip-3: #199e70;
+    --chip-4: #c98500;
+    --chip-5: #d55181;
+    --chip-6: #9085e9;
+    --chip-7: #e66767;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --surface-1:  #1a1a19;
-  --plane:      #0d0d0d;
+  --surface-1:  #1e1f1c;
+  --plane:      #101110;
   --text-primary:   #ffffff;
   --text-secondary: #c3c2b7;
-  --muted:      #898781;
+  --muted:      #918f89;
   --grid:       #2c2c2a;
   --baseline:   #383835;
   --border:     rgba(255,255,255,0.10);
+  --accent:     #0ca30c;
+  --accent-wash: #0f2010;
   --series-entrada: #3987e5;
   --series-saida:   #d95926;
   --good:      #0ca30c;
   --warning:   #fab219;
   --serious:   #ec835a;
   --critical:  #e66767;
+  --chip-1: #3987e5;
+  --chip-2: #d95926;
+  --chip-3: #199e70;
+  --chip-4: #c98500;
+  --chip-5: #d55181;
+  --chip-6: #9085e9;
+  --chip-7: #e66767;
 }
 * { box-sizing: border-box; }
 body {
@@ -68,7 +95,7 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
 }
-.wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 80px; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 80px; }
 h1,h2,h3 { margin: 0 0 4px; }
 h1 { font-size: 1.3rem; }
 h2 { font-size: 1.05rem; }
@@ -83,6 +110,7 @@ h2 { font-size: 1.05rem; }
 .login-card {
   background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
   padding: 28px; width: 100%; max-width: 360px; text-align: center;
+  box-shadow: 0 1px 3px rgba(11,11,11,0.06);
 }
 .login-card input {
   width: 100%; padding: 10px 12px; margin: 8px 0; border-radius: 8px;
@@ -90,7 +118,7 @@ h2 { font-size: 1.05rem; }
 }
 .login-card button, .btn {
   width: 100%; padding: 10px 12px; border-radius: 8px; border: none;
-  background: var(--series-entrada); color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
 }
 .login-card button:active, .btn:active { opacity: .85; }
 #login-error { color: var(--critical); font-size: .85rem; min-height: 1.2em; margin-top: 6px; }
@@ -113,10 +141,10 @@ header.topbar {
 }
 
 /* ---- tiles ---- */
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 22px; }
 .tile {
   background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
-  padding: 14px 16px;
+  padding: 14px 16px; box-shadow: 0 1px 2px rgba(11,11,11,0.04);
 }
 .tile .label { font-size: .78rem; color: var(--muted); margin-bottom: 4px; }
 .tile .value { font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -128,43 +156,57 @@ header.topbar {
 .progress-bar > div { height: 100%; background: var(--good); border-radius: 4px; }
 
 section { margin-bottom: 26px; }
-.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 16px; }
+.card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
+  padding: 16px; box-shadow: 0 1px 2px rgba(11,11,11,0.04);
+}
+.section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.add-toggle {
+  border: 1px dashed var(--border); background: none; color: var(--accent);
+  padding: 6px 12px; border-radius: 8px; font-size: .82rem; cursor: pointer; font-weight: 600;
+}
 
 /* ---- chart ---- */
 .chart-wrap { overflow-x: auto; }
 svg.chart { display: block; }
-.bar-tooltip {
-  position: absolute; background: var(--text-primary); color: var(--surface-1);
-  font-size: .72rem; padding: 4px 8px; border-radius: 6px; pointer-events: none;
-  opacity: 0; transition: opacity .1s; white-space: nowrap; z-index: 10;
-}
 .legend { display: flex; gap: 14px; font-size: .8rem; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
-/* ---- listas de contas ---- */
-.categoria-grupo { margin-bottom: 14px; }
-.categoria-titulo { font-size: .82rem; font-weight: 700; color: var(--text-secondary); margin: 0 0 6px; text-transform: uppercase; letter-spacing: .02em; }
+/* ---- blocos de categoria ---- */
+.categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.categoria-card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
+  padding: 14px; box-shadow: 0 1px 2px rgba(11,11,11,0.04);
+}
+.categoria-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.categoria-icone {
+  width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0; color: white;
+}
+.categoria-nome { font-weight: 700; font-size: .9rem; flex: 1; }
+.categoria-subtotal { font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+
 .conta-row {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 9px 0; border-bottom: 1px solid var(--grid);
+  padding: 8px 0; border-bottom: 1px solid var(--grid);
 }
 .conta-row:last-child { border-bottom: none; }
-.conta-nome { font-size: .92rem; }
+.conta-nome { font-size: .88rem; }
 .conta-nome .pill {
-  font-size: .68rem; padding: 1px 6px; border-radius: 999px; margin-left: 6px;
+  font-size: .65rem; padding: 1px 6px; border-radius: 999px; margin-left: 6px;
   background: var(--grid); color: var(--text-secondary);
 }
-.conta-valor { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.conta-valor { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; font-size: .88rem; }
 .conta-actions { display: flex; gap: 6px; align-items: center; }
 .btn-baixa {
   border: 1px solid var(--good); color: var(--good); background: none; border-radius: 6px;
-  padding: 4px 10px; font-size: .78rem; cursor: pointer; white-space: nowrap;
+  padding: 3px 9px; font-size: .74rem; cursor: pointer; white-space: nowrap;
 }
 .btn-baixa.pago { background: var(--good); color: white; border-color: var(--good); }
-.btn-del { border: none; background: none; color: var(--muted); cursor: pointer; font-size: .9rem; padding: 2px 6px; }
+.btn-del { border: none; background: none; color: var(--muted); cursor: pointer; font-size: .85rem; padding: 2px 6px; }
 
-form.form-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+form.form-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 12px; }
 form.form-grid .full { grid-column: 1 / -1; }
 form.form-grid label { font-size: .78rem; color: var(--text-secondary); display: block; margin-bottom: 3px; }
 form.form-grid input, form.form-grid select {
@@ -172,6 +214,8 @@ form.form-grid input, form.form-grid select {
   background: var(--plane); color: var(--text-primary); font-size: .95rem;
 }
 form.form-grid button { grid-column: 1 / -1; }
+.form-collapse { display: none; }
+.form-collapse.open { display: block; }
 
 .dica {
   display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--grid); align-items: flex-start;
@@ -186,7 +230,7 @@ form.form-grid button { grid-column: 1 / -1; }
   border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
   padding: 7px 14px; border-radius: 999px; font-size: .85rem; cursor: pointer; white-space: nowrap;
 }
-.tabs button.active { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+.tabs button.active { background: var(--accent); color: white; border-color: var(--accent); }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
@@ -224,43 +268,44 @@ form.form-grid button { grid-column: 1 / -1; }
     <div class="tiles" id="tiles"></div>
 
     <div class="tabs">
-      <button data-tab="contas" class="active">Contas do mês</button>
-      <button data-tab="entrada">Nova entrada</button>
+      <button data-tab="dashboard" class="active">Dashboard</button>
       <button data-tab="dicas">Dicas</button>
       <button data-tab="historico">Histórico</button>
     </div>
 
-    <div class="tab-panel active" id="tab-contas">
-      <section class="card">
-        <h2>Contas de <span id="mes-label-2"></span></h2>
-        <p class="muted">Marque "dar baixa" quando pagar. As contas fixas do mês aparecem sozinhas.</p>
-        <div id="lista-contas"></div>
-        <details style="margin-top:14px;">
-          <summary style="cursor:pointer; font-size:.85rem; color:var(--text-secondary);">+ Adicionar despesa avulsa</summary>
-          <form class="form-grid" style="margin-top:10px;" onsubmit="return novaDespesaAvulsa(event)">
-            <div class="full">
-              <label>Descrição</label>
-              <input type="text" id="desp-desc" required>
-            </div>
-            <div>
-              <label>Valor (R$)</label>
-              <input type="number" step="0.01" id="desp-valor" required>
-            </div>
-            <div>
-              <label>Categoria</label>
-              <select id="desp-categoria"></select>
-            </div>
-            <button class="btn" type="submit">Adicionar</button>
-          </form>
-        </details>
-      </section>
-    </div>
+    <div class="tab-panel active" id="tab-dashboard">
 
-    <div class="tab-panel" id="tab-entrada">
       <section class="card">
-        <h2>Lançar entrada</h2>
+        <div class="section-title">
+          <h2>Contas de <span id="mes-label-2"></span></h2>
+          <button class="add-toggle" onclick="toggleForm('form-despesa')">+ Despesa avulsa</button>
+        </div>
+        <p class="muted">Marque "dar baixa" quando pagar. As contas fixas do mês aparecem sozinhas, organizadas por categoria.</p>
+        <form class="form-grid form-collapse" id="form-despesa" onsubmit="return novaDespesaAvulsa(event)">
+          <div class="full">
+            <label>Descrição</label>
+            <input type="text" id="desp-desc" required>
+          </div>
+          <div>
+            <label>Valor (R$)</label>
+            <input type="number" step="0.01" id="desp-valor" required>
+          </div>
+          <div>
+            <label>Categoria</label>
+            <select id="desp-categoria"></select>
+          </div>
+          <button class="btn" type="submit">Adicionar</button>
+        </form>
+        <div class="categorias-grid" id="lista-contas" style="margin-top:14px;"></div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Entradas do mês</h2>
+          <button class="add-toggle" onclick="toggleForm('form-entrada')">+ Nova entrada</button>
+        </div>
         <p class="muted">Dinheiro que entrou (cliente, salário, etc.)</p>
-        <form class="form-grid" onsubmit="return novaEntrada(event)">
+        <form class="form-grid form-collapse" id="form-entrada" onsubmit="return novaEntrada(event)">
           <div class="full">
             <label>Descrição (cliente / origem)</label>
             <input type="text" id="ent-desc" required>
@@ -282,9 +327,9 @@ form.form-grid button { grid-column: 1 / -1; }
           </div>
           <button class="btn" type="submit">Lançar entrada</button>
         </form>
-        <h3 style="margin-top:22px;">Entradas do mês</h3>
-        <div id="lista-entradas"></div>
+        <div id="lista-entradas" style="margin-top:10px;"></div>
       </section>
+
     </div>
 
     <div class="tab-panel" id="tab-dicas">
@@ -315,12 +360,27 @@ form.form-grid button { grid-column: 1 / -1; }
   </div>
 </div>
 
-<div class="bar-tooltip" id="tooltip"></div>
-
 <script>
 const SUPA_URL = 'https://okolawlvmfyxzvnnpvtv.supabase.co';
 const SUPA_KEY = 'sb_publishable_IsQdhzWIou3tBX9qxak1VQ_m-wEHCFZ';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const CATEGORIA_META = {
+  'Moradia':                  { icone: '🏠', chip: 'var(--chip-1)' },
+  'Transporte':                { icone: '🚗', chip: 'var(--chip-2)' },
+  'Alimentação':                { icone: '🍽️', chip: 'var(--chip-3)' },
+  'Saúde & Bem-estar':          { icone: '💪', chip: 'var(--chip-4)' },
+  'Dívidas & Empréstimos':      { icone: '💳', chip: 'var(--chip-7)' },
+  'Impostos & Contabilidade':   { icone: '📋', chip: 'var(--chip-6)' },
+  'Casa & Compras':             { icone: '🛋️', chip: 'var(--chip-5)' },
+  'Investimento / Reserva':     { icone: '🌱', chip: 'var(--good)' },
+  'Outras despesas':            { icone: '📦', chip: 'var(--muted)' },
+  'Consultoria / Clientes':     { icone: '💼', chip: 'var(--chip-1)' },
+  'Outras entradas':            { icone: '💰', chip: 'var(--chip-2)' },
+};
+function metaCategoria(nome) {
+  return CATEGORIA_META[nome] || { icone: '•', chip: 'var(--muted)' };
+}
 
 let categorias = [];
 let contasFixas = [];
@@ -337,6 +397,9 @@ function fmtMesLabel(d) {
 }
 function fmtBRL(v) {
   return (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+function toggleForm(id) {
+  document.getElementById(id).classList.toggle('open');
 }
 
 // ---------- AUTH ----------
@@ -405,7 +468,9 @@ async function carregarMes() {
   let { data: lancs } = await sb.from('fin_lancamentos').select('*').eq('mes_ref', mesRef);
   lancs = lancs || [];
 
-  // gera automaticamente as contas fixas ativas que ainda não existem nesse mês
+  // gera automaticamente as contas fixas ativas que ainda não existem nesse mês.
+  // upsert com ignoreDuplicates: se dois carregamentos disputarem a mesma inserção,
+  // o banco (constraint única mes_ref+conta_fixa_id) garante que só uma sobrevive.
   const idsFixasNoMes = new Set(lancs.filter(l => l.conta_fixa_id).map(l => l.conta_fixa_id));
   const faltando = contasFixas.filter(cf => !idsFixasNoMes.has(cf.id));
   if (faltando.length) {
@@ -413,8 +478,9 @@ async function carregarMes() {
       tipo: 'saida', categoria_id: cf.categoria_id, conta_fixa_id: cf.id,
       descricao: cf.nome, valor: cf.valor_esperado, mes_ref: mesRef, status: 'pendente',
     }));
-    const { data: inseridos } = await sb.from('fin_lancamentos').insert(novos).select();
-    lancs = lancs.concat(inseridos || []);
+    await sb.from('fin_lancamentos').upsert(novos, { onConflict: 'mes_ref,conta_fixa_id', ignoreDuplicates: true });
+    const { data: recarregado } = await sb.from('fin_lancamentos').select('*').eq('mes_ref', mesRef);
+    lancs = recarregado || lancs;
   }
 
   lancamentosMes = lancs;
@@ -458,6 +524,7 @@ function novaDespesaAvulsa(ev) {
     }]);
     document.getElementById('desp-desc').value = '';
     document.getElementById('desp-valor').value = '';
+    document.getElementById('form-despesa').classList.remove('open');
     await carregarMes();
   })();
   return false;
@@ -478,6 +545,7 @@ function novaEntrada(ev) {
     }]);
     document.getElementById('ent-desc').value = '';
     document.getElementById('ent-valor').value = '';
+    document.getElementById('form-entrada').classList.remove('open');
     await carregarDadosBase();
     await carregarMes();
   })();
@@ -492,7 +560,6 @@ function renderTiles() {
   const saidaTotal = saidas.reduce((s, l) => s + Number(l.valor), 0);
   const saidaPaga = saidas.filter(l => l.status === 'pago').reduce((s, l) => s + Number(l.valor), 0);
   const saldoProjetado = entradaTotal - saidaTotal;
-  const saldoPago = entradas.filter(l => l.status === 'pago').reduce((s,l)=>s+Number(l.valor),0) - saidaPaga;
 
   const pctReserva = Math.min(100, (reservaAcumulada / Number(metas.meta_reserva_total)) * 100);
 
@@ -532,9 +599,14 @@ function renderContas() {
   document.getElementById('lista-contas').innerHTML = nomes.map(nome => {
     const itens = porCategoria[nome].sort((a,b) => (a.status==='pago')-(b.status==='pago'));
     const subtotal = itens.reduce((s,l)=>s+Number(l.valor),0);
+    const meta = metaCategoria(nome);
     return `
-      <div class="categoria-grupo">
-        <div class="categoria-titulo">${nome} · ${fmtBRL(subtotal)}</div>
+      <div class="categoria-card">
+        <div class="categoria-header">
+          <div class="categoria-icone" style="background:${meta.chip}">${meta.icone}</div>
+          <div class="categoria-nome">${nome}</div>
+          <div class="categoria-subtotal">${fmtBRL(subtotal)}</div>
+        </div>
         ${itens.map(l => `
           <div class="conta-row">
             <div class="conta-nome">${l.descricao}${l.conta_fixa_id ? '<span class="pill">fixa</span>' : ''}</div>
@@ -626,7 +698,6 @@ function renderDicas() {
   // 5. projeção de quanto tempo falta pra bater a reserva de 100k
   const metaReserva = Number(metas.meta_reserva_total);
   if (reservaAcumulada < metaReserva) {
-    const mediaAportesHist = historico.length ? historico.reduce((s,m)=>s+Math.max(0,Number(m.saldo)),0) / historico.length : 0;
     const ritmoMensal = Math.max(metaInvestir, 1);
     const faltam = metaReserva - reservaAcumulada;
     const meses = Math.ceil(faltam / ritmoMensal);
