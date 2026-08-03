@@ -524,7 +524,8 @@ async function carregarMes() {
     lancs = recarregado || lancs;
   }
 
-  lancamentosMes = lancs;
+  // lancs (bruto, com os "removido") só serve pra idsFixasNoMes acima, não pra exibir/somar
+  lancamentosMes = lancs.filter(l => l.status !== 'removido');
   renderTiles();
   renderContas();
   renderEntradas();
@@ -548,7 +549,15 @@ async function darBaixa(id, statusAtual) {
 
 async function excluirLancamento(id) {
   if (!confirm('Excluir este lançamento?')) return;
-  await sb.from('fin_lancamentos').delete().eq('id', id);
+  const l = lancamentosMes.find(x => x.id === id);
+  if (l && l.conta_fixa_id) {
+    // conta fixa: exclusão "suave" (status='removido') — um delete de verdade seria
+    // recriado automaticamente no próximo carregamento, já que a conta fixa segue ativa
+    await sb.from('fin_lancamentos').update({ status: 'removido' }).eq('id', id);
+  } else {
+    await sb.from('fin_lancamentos').delete().eq('id', id);
+  }
+  await carregarDadosBase();
   await carregarMes();
 }
 
